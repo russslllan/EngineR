@@ -18,7 +18,7 @@ hInst(GetModuleHandle(NULL))
 	wc.hIcon = reinterpret_cast<HICON>(LoadImage(GetInstance(), MAKEINTRESOURCE(IDI_ICON1), IMAGE_ICON, 48, 48, 0));
 	wc.hCursor = nullptr;
 	wc.hbrBackground = nullptr;
-	wc.lpszClassName = 0;// = GetName();
+	wc.lpszClassName = GetName();
 	wc.hIconSm = reinterpret_cast<HICON>(LoadImage(GetInstance(), MAKEINTRESOURCE(IDI_ICON1), IMAGE_ICON, 32, 32, 0));
 	
 	if (!RegisterClassEx(&wc))
