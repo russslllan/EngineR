@@ -1,9 +1,10 @@
 #include "Window.h"
 #include "resource.h"
+#include <sstream>
 
 Window::WindowClass Window::WindowClass::wndClass;
 
-Window::WindowClass::WindowClass() noexcept
+Window::WindowClass::WindowClass() 
 	:
 hInst(GetModuleHandle(NULL))
 {
@@ -17,9 +18,13 @@ hInst(GetModuleHandle(NULL))
 	wc.hIcon = reinterpret_cast<HICON>(LoadImage(GetInstance(), MAKEINTRESOURCE(IDI_ICON1), IMAGE_ICON, 48, 48, 0));
 	wc.hCursor = nullptr;
 	wc.hbrBackground = nullptr;
-	wc.lpszClassName = GetName();
+	wc.lpszClassName = 0;// = GetName();
 	wc.hIconSm = reinterpret_cast<HICON>(LoadImage(GetInstance(), MAKEINTRESOURCE(IDI_ICON1), IMAGE_ICON, 32, 32, 0));
-	RegisterClassEx(&wc);
+	
+	if (!RegisterClassEx(&wc))
+	{
+		WINDOW_LAST_EXCEPT();
+	}
 }
 
 Window::WindowClass::~WindowClass() noexcept
@@ -37,7 +42,7 @@ HINSTANCE Window::WindowClass::GetInstance() noexcept
 	return wndClass.hInst;
 }
 
-Window::Window(int width, int height, const char* name) noexcept
+Window::Window(int width, int height, const char* name) 
 {
 	LONG edge = 100;
 	RECT rc = { edge, edge, width + edge, height + edge };
@@ -53,6 +58,11 @@ Window::Window(int width, int height, const char* name) noexcept
 		nullptr,
 		WindowClass::GetInstance(),
 		this);
+
+	if (hWnd == nullptr)
+	{
+		WINDOW_LAST_EXCEPT();
+	}
 
 	ShowWindow(hWnd, SW_SHOWDEFAULT);
 }
@@ -94,4 +104,57 @@ LRESULT CALLBACK Window::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lP
 	}
 
 	return DefWindowProc(hWnd, msg, wParam, lParam);
+}
+
+Window::Exception::Exception(int line, const char* file, HRESULT hr) noexcept
+	:
+	RusException(line, file),
+	hr(hr)
+{}
+
+
+const char* Window::Exception::what() const noexcept
+{
+	std::ostringstream oss;
+	oss << GetType() << std::endl
+		<< "[Error Code] " << GetErrorCode() << std::endl
+		<< "[Description] " << GetErrorString() << std::endl
+		<< GetOriginString();
+	whatBuffer = oss.str();
+	return whatBuffer.c_str();
+}
+
+const char * Window::Exception::GetType() const noexcept
+{
+	return "Rus Window Exception";
+}
+
+std::string Window::Exception::TranslateErrorCode(HRESULT hr) noexcept
+{
+	char* pMsgBuf = nullptr;
+	DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_IGNORE_INSERTS |
+		FORMAT_MESSAGE_FROM_SYSTEM;
+	DWORD nMsgLen = FormatMessage(
+		flags,
+		nullptr,
+		hr,
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		reinterpret_cast<LPSTR>(&pMsgBuf),
+		0,
+		nullptr);
+	if (nMsgLen == 0)
+		return "Unidentified error code";
+	std::string errorString = pMsgBuf;
+	LocalFree(pMsgBuf);
+	return errorString;
+}
+
+HRESULT Window::Exception::GetErrorCode() const noexcept
+{
+	return hr;
+}
+
+std::string Window::Exception::GetErrorString() const noexcept
+{
+	return TranslateErrorCode(hr);
 }

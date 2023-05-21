@@ -10,21 +10,38 @@ int WINAPI WinMain(
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdShow);
 
-	Window wnd1(800, 600, "Engine");
-	//Window wnd2(400, 300, "Engine2");
 
-	MSG msg;
-	BOOL gResult;
-	while ((gResult = GetMessage(&msg, NULL, 0, 0)) > 0)
+	try
 	{
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
-	}
+		Window wnd1(800, 600, "Engine");
+		//Window wnd2(400, 300, "Engine2");
 
-	if (gResult == -1)
+		MSG msg;
+		BOOL gResult;
+		while ((gResult = GetMessage(&msg, NULL, 0, 0)) > 0)
+		{
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+
+		if (gResult == -1)
+		{
+			return -1;
+		}
+
+		return msg.wParam;
+	}
+	catch (const RusException& e)
 	{
-		return -1;
+		MessageBox(nullptr, e.what(), e.GetType(), MB_OK | MB_ICONEXCLAMATION);
 	}
-
-	return msg.wParam;
+	catch (const std::exception& e)
+	{
+		MessageBox(nullptr, e.what(), "Standart Exception", MB_OK | MB_ICONEXCLAMATION);
+	}
+	catch (...)
+	{
+		MessageBox(nullptr, "No details available", "Unknown Exception", MB_OK | MB_ICONEXCLAMATION);
+	}
+	return -1;
 }

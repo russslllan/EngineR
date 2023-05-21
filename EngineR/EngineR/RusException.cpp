@@ -30,7 +30,12 @@ const std::string& RusException::GetFile() const noexcept
 std::string RusException::GetOriginString() const noexcept
 {
 	std::ostringstream oss;
-	oss << "[File]" << file << std::endl
-		<< "[Line]" << line;
+	oss << "[File] " << file << std::endl
+		<< "[Line] " << line;
 	return oss.str();
+}
+
+int RusException::GetLine() const noexcept
+{
+	return line;
 }
