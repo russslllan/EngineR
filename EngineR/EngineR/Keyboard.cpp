@@ -41,7 +41,6 @@ char Keyboard::ReadChar() noexcept
 	{
 		return 0;
 	}
-	return ;
 }
 
 void Keyboard::FlushChar() noexcept
