@@ -22,6 +22,10 @@ int WINAPI WinMain(
 		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
+			if (wnd1.kbd.KeyIsPressed(VK_MENU))
+			{
+				MessageBox(nullptr, "SPACE is pressed", 0, MB_OK);
+			}
 		}
 
 		if (gResult == -1)

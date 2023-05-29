@@ -49,11 +49,12 @@ public:
 	void EnableAutoRepeat() noexcept;
 	void DisableAutoRepeat() noexcept;
 	bool AutorepeatIsEnabled() const noexcept;
-private:
+
 	void OnKeyPressed(unsigned char keycode) noexcept;
 	void OnKeyReleased(unsigned char keycode)noexcept;
 	void OnChar(char character) noexcept;
 	void ClearState() noexcept;
+private:
 	template<class T>
 	static void trimBuffer(std::queue<T>& buffer) noexcept;
 private:
