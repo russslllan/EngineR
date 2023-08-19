@@ -1,5 +1,5 @@
 #include "Window.h"
-
+#include <sstream>
 
 int WINAPI WinMain(
 	HINSTANCE hInstance,
@@ -9,7 +9,6 @@ int WINAPI WinMain(
 {
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdShow);
-
 
 	try
 	{
@@ -22,10 +21,34 @@ int WINAPI WinMain(
 		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
-			if (wnd1.kbd.KeyIsPressed(VK_MENU))
+			while (!wnd1.mouse.IsEmpty())
 			{
-				MessageBox(nullptr, "SPACE is pressed", 0, MB_OK);
+				auto e = wnd1.mouse.Read();
+				switch (e.GetType())
+				{
+				case Mouse::Event::Type::Leave:
+					wnd1.SetTitle("Gone!");
+					break;
+				case Mouse::Event::Type::Move:
+					{
+						std::ostringstream oss;
+						oss << "Mouse moved to(" << e.GetPosX()
+							<< " ," << e.GetPosY() << ")";
+						wnd1.SetTitle(oss.str());
+					}
+					break;
+				}
 			}
+			
+			/*std::ostringstream os;
+			os << "Mouse position "
+				<< "(" << e.GetPosX() 
+				<< "," << e.GetPosY() 
+				<< ")";
+			if (e.GetType() == Mouse::Event::Type::Enter)
+				wnd1.SetTitle(os.str());
+			else if (e.GetType() == Mouse::Event::Type::Leave)
+				wnd1.SetTitle(std::string("Gone!"));*/
 		}
 
 		if (gResult == -1)
