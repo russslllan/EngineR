@@ -44,6 +44,7 @@ public:
 	Window(const Window&) = delete;
 	Window& operator=(const Window&) = delete;
 	void SetTitle(const std::string& title);
+	static bool ProcessMessages();
 public:
 	Keyboard kbd;
 	Mouse mouse;

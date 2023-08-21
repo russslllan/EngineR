@@ -83,6 +83,21 @@ void Window::SetTitle(const std::string & title)
 	}
 }
 
+bool Window::ProcessMessages()
+{
+	MSG msg;
+	while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+	{
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+		if (msg.message == WM_QUIT)
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
 LRESULT CALLBACK Window::HandleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
 {
 	if (msg == WM_NCCREATE)
@@ -182,8 +197,17 @@ LRESULT CALLBACK Window::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lP
 	}
 	case WM_MOUSEWHEEL:
 		const POINTS pt = MAKEPOINTS(lParam);
-		const int delta = GET_WHEEL_DELTA_WPARAM(wParam);
-		mouse.OnWheelDelta(pt.x, pt.y, delta);
+		//const int delta = GET_WHEEL_DELTA_WPARAM(wParam);
+		//mouse.OnWheelDelta(pt.x, pt.y, delta);
+		if (GET_WHEEL_DELTA_WPARAM(wParam) > 0)
+		{
+			mouse.OnWheelUp(pt.x, pt.y);
+		}
+		else if (GET_WHEEL_DELTA_WPARAM(wParam) < 0)
+		{
+			mouse.OnWheelDown(pt.x, pt.y);
+		}
+		break;
 	}
 
 	return DefWindowProc(hWnd, msg, wParam, lParam);
