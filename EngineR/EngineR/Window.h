@@ -4,6 +4,8 @@
 #include "RusExceptinon.h"
 #include "Keyboard.h"
 #include "Mouse.h"
+#include "Graphics.h"
+#include <memory>
 
 class Window
 {
@@ -45,10 +47,11 @@ public:
 	Window& operator=(const Window&) = delete;
 	void SetTitle(const std::string& title);
 	static bool ProcessMessages();
+	Graphics& Gfx();
 public:
 	Keyboard kbd;
 	Mouse mouse;
-
+	std::unique_ptr<Graphics> pGfx;
 private:
 	static LRESULT CALLBACK HandleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
 	static LRESULT CALLBACK HandleMsgThunk(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
@@ -58,6 +61,7 @@ private:
 	int width;
 	int height;
 	HWND hWnd;
+	
 };
 
 #define WINDOW_EXCEPT(hr) throw Window::Exception(__LINE__, __FILE__, (hr))

@@ -19,9 +19,7 @@ int App::Go()
 
 void App::DoFrame()
 {
-	const float t = timer.Peek();
-	std::ostringstream oss;
-	oss << "Timer elapsed: " << t;
-	std::cout << oss.str();
-	//wnd.SetTitle(oss.str()); // Not recommended! Because the window freezes
+	const float c = sin(timer.Peek()) / 2.0f + 0.5f;
+	wnd.Gfx().ClearBuffer(c, c, 1.0f);
+	wnd.Gfx().EndFrame();
 }
