@@ -1,6 +1,9 @@
 #include "Window.h"
 #include "resource.h"
 #include <sstream>
+#include <locale> 
+#include <codecvt>
+#include "DXErr.h"
 
 Window::WindowClass Window::WindowClass::wndClass;
 
@@ -102,6 +105,10 @@ bool Window::ProcessMessages()
 
 Graphics & Window::Gfx()
 {
+	if (!pGfx)
+	{
+		throw CHWND_NOGFX_EXCEPT();
+	}
 	return *pGfx;
 }
 
@@ -220,25 +227,25 @@ LRESULT CALLBACK Window::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lP
 	return DefWindowProc(hWnd, msg, wParam, lParam);
 }
 
-Window::Exception::Exception(int line, const char* file, HRESULT hr) noexcept
+Window::HrException::HrException(int line, const char* file, HRESULT hr) noexcept
 	:
 	RusException(line, file),
 	hr(hr)
 {}
 
 
-const char* Window::Exception::what() const noexcept
+const char* Window::HrException::what() const noexcept
 {
 	std::ostringstream oss;
 	oss << GetType() << std::endl
 		<< "[Error Code] " << GetErrorCode() << std::endl
-		<< "[Description] " << GetErrorString() << std::endl
+		<< "[Description] " << GetErrorDescription() << std::endl
 		<< GetOriginString();
 	whatBuffer = oss.str();
 	return whatBuffer.c_str();
 }
 
-const char * Window::Exception::GetType() const noexcept
+const char * Window::HrException::GetType() const noexcept
 {
 	return "Rus Window Exception";
 }
@@ -263,12 +270,32 @@ std::string Window::Exception::TranslateErrorCode(HRESULT hr) noexcept
 	return errorString;
 }
 
-HRESULT Window::Exception::GetErrorCode() const noexcept
+HRESULT Window::HrException::GetErrorCode() const noexcept
 {
 	return hr;
 }
 
-std::string Window::Exception::GetErrorString() const noexcept
+std::string Window::HrException::GetErrorDescription() const noexcept
 {
-	return TranslateErrorCode(hr);
+	char* pMsgBuf = nullptr;
+	DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_IGNORE_INSERTS |
+		FORMAT_MESSAGE_FROM_SYSTEM;
+	DWORD nMsgLen = FormatMessage(
+		flags,
+		nullptr,
+		hr,
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		reinterpret_cast<LPSTR>(&pMsgBuf),
+		0,
+		nullptr);
+	if (nMsgLen == 0)
+		return "Unidentified error code";
+	std::string errorString = pMsgBuf;
+	LocalFree(pMsgBuf);
+	return errorString;
+}
+
+const char* Window::NoGfxException::GetType() const noexcept
+{
+	return "Rus Graphics Exception [Error creating Graphics]";
 }
