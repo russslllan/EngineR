@@ -3,21 +3,12 @@
 #include <sstream>
 #include <locale> 
 #include <codecvt>
+#include "Macros.h"
+
 
 #pragma comment(lib, "d3d11.lib")
 
-#define GFX_EXCEPT_NOINFO(hr) Graphics::HrException(__LINE__,__FILE__,(hr))
-#define GFX_THROW_NOINFO(hrcall) if(FAILED(hr = (hrcall))) throw Graphics::HrException(__LINE__, __FILE__, (hr))
 
-#ifndef NDEBUG
-#define GFX_EXCEPT(hr) Graphics::HrException(__LINE__,__FILE__,(hr), infoManager.GetMessages())
-#define GFX_THROW_INFO(hrcall) infoManager.Set(); if(FAILED( hr = hrcall)) throw GFX_EXCEPT(hr)
-#define GFX_DEVICE_REMOVED_EXCEPT(hr) Graphics::DeviceRemovedException( __LINE__, __FILE__, (hr), infoManager.GetMessages())
-#else
-#define GFX_EXCEPT(hr) Graphics::HrException(__LINE__,__FILE__,(hr))
-#define GFX_THROW_INFO(hrcall) GFX_THROW_NOINFO(hrcall)
-#define GFX_DEVICE_REMOVED_EXCEPT(hr) Graphics::DeviceRemoveException(__LINE__,__FILE__,(hr),infoManager.getMessages())
-#endif
 
 
 #ifdef _DEBUG
@@ -40,7 +31,7 @@ Graphics::Graphics(HWND hWnd)
 	sd.SampleDesc.Quality = 0;
 	sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	sd.BufferCount = 1;
-	sd.OutputWindow = (HWND)696969;//hWnd;
+	sd.OutputWindow = hWnd;
 	sd.Windowed = TRUE;
 	sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	sd.Flags = 0;
@@ -61,37 +52,17 @@ Graphics::Graphics(HWND hWnd)
 		nullptr,
 		&pContext));
 
-	ID3D11Resource* pBackBuffer;
+	Microsoft::WRL::ComPtr<ID3D11Resource> pBackBuffer;
 	GFX_THROW_INFO(pSwap->GetBuffer(
 		0, 
 		__uuidof(ID3D11Resource),
-		reinterpret_cast<void**>(&pBackBuffer)));
+		&pBackBuffer));
 	GFX_THROW_INFO(pDevice->CreateRenderTargetView(
-		pBackBuffer,
+		pBackBuffer.Get(),
 		0,
 		&pTarget));
-	pBackBuffer->Release();
 }
 
-Graphics::~Graphics()
-{
-	if (pTarget != nullptr)
-	{
-		pTarget->Release();
-	}
-	if (pContext != nullptr)
-	{
-		pContext->Release();
-	}
-	if (pSwap != nullptr)
-	{
-		pSwap->Release();
-	}
-	if (pDevice != nullptr)
-	{
-		pDevice->Release();
-	}
-}
 
 void Graphics::EndFrame()
 {
@@ -117,15 +88,23 @@ void Graphics::ClearBuffer(float red, float green, float blue) noexcept
 {
 	const float color[4] = { red, green, blue, 1.0f };
 	pContext->ClearRenderTargetView(
-		pTarget,
+		pTarget.Get(),
 		color);
 }
 
 Graphics::HrException::HrException(
 	int line, 
 	const char * file,
-	HRESULT hr, 
-	std::vector<std::string> infoMsgs) noexcept
+	HRESULT hr 
+	/*,std::vector<std::string> infoMsgs*/) noexcept
+	:
+	Exception(line, file),
+	hr(hr)
+{
+
+}
+
+Graphics::HrException::HrException(int line, const char * file, HRESULT hr, std::vector<std::string> infoMsgs) noexcept
 	:
 	Exception(line, file),
 	hr(hr)

@@ -29,7 +29,7 @@ DxgiInfoManager::DxgiInfoManager()
 	GFX_THROW_NOINFO(
 		DxgiGetDebugInterface(
 			__uuidof(IDXGIInfoQueue),
-			reinterpret_cast<void**>(pDxgiInfoQueue)));
+			reinterpret_cast<void**>(&pDxgiInfoQueue)));
 }
 
 DxgiInfoManager::~DxgiInfoManager()
