@@ -204,8 +204,7 @@ const char* Graphics::HrException::HrException::what() const noexcept
 	{
 		oss << "\n[Error Info]\n" << GetErrorInfo() << std::endl;
 	}
-	oss << "[File] " << file << std::endl
-		<< "[Line] " << line;
+	oss << GetOriginString();
 	whatBuffer = oss.str();
 	return whatBuffer.c_str();
 }
