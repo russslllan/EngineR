@@ -6,15 +6,16 @@
 #include <vector>
 #include "DxgiInfoManager.h"
 #include <wrl.h>
+//#include "Macros.h"
 
 class Graphics
 {
 public:
-	class Exception : public RusException
-	{
-		using RusException::RusException;
-	};
-	class HrException : public Exception
+	//class Exception : public RusException
+	//{
+	//	using RusException::RusException;
+	//};
+	class HrException : public RusException
 	{
 	public:
 		HrException(
@@ -37,6 +38,16 @@ public:
 		HRESULT hr;
 		std::string info;
 	};
+	class InfoException : public RusException
+	{
+	public:
+		InfoException(int line, const char* file,std::vector<std::string> infoMsgs);
+		const char* what() const noexcept override;
+		const char* GetType() const noexcept override;
+		std::string GetErrorInfo() const noexcept;
+	private:
+		std::string info;
+	};
 	class DeviceRemovedException : public HrException
 	{
 		using HrException::HrException;
@@ -52,6 +63,9 @@ public:
 	~Graphics() = default;
 	void EndFrame();
 	void ClearBuffer(float red, float green, float blue) noexcept;
+	void DrawTestTriangle();
+
+
 private:
 #ifndef NDEBUG
 	DxgiInfoManager infoManager;

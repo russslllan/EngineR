@@ -3,6 +3,7 @@
 #include "RusWin.h"
 #include <vector>
 #include <dxgidebug.h>
+#include <string>
 
 class DxgiInfoManager
 {

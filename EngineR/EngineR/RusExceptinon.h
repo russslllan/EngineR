@@ -12,7 +12,7 @@ public:
 	const std::string& GetFile() const noexcept;
 	std::string GetOriginString() const noexcept;
 
-private:
+protected:
 	int line;
 	std::string file;
 protected:
