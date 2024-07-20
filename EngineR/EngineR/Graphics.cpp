@@ -93,7 +93,7 @@ void Graphics::ClearBuffer(float red, float green, float blue) noexcept
 		color);
 }
 
-void Graphics::DrawTestTriangle()
+void Graphics::DrawTestTriangle(float angle)
 {
 	namespace wrl = Microsoft::WRL;
 	HRESULT hr;
@@ -115,7 +115,7 @@ void Graphics::DrawTestTriangle()
 		{-0.5f, -0.5f , 0,   0,   255, 0},
 		{-0.3f,  0.3f,  0,   255, 0,   0},
 		{ 0.3f,  0.3f,  0,   0,   255, 0},
-		{ 0.0f, -0.8f,  255, 0,   0,   0}
+		{ 0.0f, -1.0f,  255, 0,   0,   0}
 	};
 
 	wrl::ComPtr<ID3D11Buffer> vertexBuffer;
@@ -173,6 +173,36 @@ void Graphics::DrawTestTriangle()
 	GFX_THROW_INFO(pDevice->CreateInputLayout(ied, (UINT)std::size(ied), pBlob1->GetBufferPointer(), pBlob1->GetBufferSize(), & pInputLayout));
 	pContext->IASetInputLayout(pInputLayout.Get());
 
+	struct Matrix
+	{
+		float mat[4][4];
+	};
+
+	float aspect = 3.0f / 4.0f;
+	
+	const Matrix  matTrans =
+	{
+		aspect* std::cos(angle),  std::sin(angle), 0.0f, 0.0f,
+	    aspect*-std::sin(angle),  std::cos(angle), 0.0f, 0.0f,
+		0.0f,                     0.0f,            1.0f, 0.0f,
+		0.0f,                     0.0f,            0.0f, 1.0f,
+	};
+	wrl::ComPtr<ID3D11Buffer> pConstantBuffer;
+	D3D11_BUFFER_DESC cbd = {};
+	cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	cbd.Usage = D3D11_USAGE_DYNAMIC;
+	cbd.ByteWidth = sizeof(matTrans);
+	cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	cbd.MiscFlags = 0u;
+	cbd.StructureByteStride = 0u;
+
+	D3D11_SUBRESOURCE_DATA csd = {};
+	csd.pSysMem = &matTrans;
+
+	GFX_THROW_INFO(pDevice->CreateBuffer(&cbd, &csd, &pConstantBuffer));
+
+	pContext->VSSetConstantBuffers(0u, 1u, pConstantBuffer.GetAddressOf());
+
 	wrl::ComPtr<ID3D11PixelShader> pPixelShader;
 	GFX_THROW_INFO(D3DReadFileToBlob(L"pixelShader.cso", &pBlob2));
 	GFX_THROW_INFO(pDevice->CreatePixelShader(pBlob2->GetBufferPointer(), pBlob2->GetBufferSize(), nullptr, &pPixelShader));
@@ -181,8 +211,8 @@ void Graphics::DrawTestTriangle()
 	pContext->OMSetRenderTargets(1u, pTarget.GetAddressOf(), nullptr);
 
 	D3D11_VIEWPORT vp;
-	vp.Width = 800;
-	vp.Height = 600;
+	vp.Width    = 800;
+	vp.Height   = 600;
 	vp.MinDepth = 0;
 	vp.MaxDepth = 1;
 	vp.TopLeftX = 0;
