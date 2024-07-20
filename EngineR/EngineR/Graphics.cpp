@@ -102,13 +102,17 @@ void Graphics::DrawTestTriangle()
 	{
 		float x;
 		float y;
+		unsigned char  r;
+		unsigned char  g;
+		unsigned char  b;
+		unsigned char  a;
 	};
 
 	const Vertex vertices[] =
 	{
-		{ 0.0f,  0.5f },
-		{ 0.5f, -0.5f },
-		{-0.5f, -0.5f }
+		{ 0.0f,  0.5f, 0, 255, 0, 0 },
+		{ 0.5f, -0.5f , 255, 0, 0, 0},
+		{-0.5f, -0.5f , 0, 0, 255, 0}
 	};
 
 	wrl::ComPtr<ID3D11Buffer> vertexBuffer;
@@ -139,8 +143,10 @@ void Graphics::DrawTestTriangle()
 	const D3D11_INPUT_ELEMENT_DESC ied[] =
 	{
 		{"Position", 0, DXGI_FORMAT_R32G32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0},
+		{"Color", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 8u, D3D11_INPUT_PER_VERTEX_DATA},
 	};
-	GFX_THROW_INFO(pDevice->CreateInputLayout(ied, 1u, pBlob1->GetBufferPointer(), pBlob1->GetBufferSize(), &pInputLayout));
+
+	GFX_THROW_INFO(pDevice->CreateInputLayout(ied, (UINT)ARRAYSIZE(ied), pBlob1->GetBufferPointer(), pBlob1->GetBufferSize(), &pInputLayout));
 	pContext->IASetInputLayout(pInputLayout.Get());
 
 	wrl::ComPtr<ID3D11PixelShader> pPixelShader;
