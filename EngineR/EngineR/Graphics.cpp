@@ -5,12 +5,14 @@
 #include <codecvt>
 #include "Macros.h"
 #include <d3dcompiler.h>
+#include <DirectXMath.h>
 
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "D3DCompiler.lib")
 
-
+namespace wrl = Microsoft::WRL;
+namespace dx  = DirectX;
 
 #ifdef _DEBUG
 	UINT flag = D3D11_CREATE_DEVICE_DEBUG;
@@ -95,7 +97,6 @@ void Graphics::ClearBuffer(float red, float green, float blue) noexcept
 
 void Graphics::DrawTestTriangle(float angle)
 {
-	namespace wrl = Microsoft::WRL;
 	HRESULT hr;
 
 	struct Vertex
@@ -173,31 +174,32 @@ void Graphics::DrawTestTriangle(float angle)
 	GFX_THROW_INFO(pDevice->CreateInputLayout(ied, (UINT)std::size(ied), pBlob1->GetBufferPointer(), pBlob1->GetBufferSize(), & pInputLayout));
 	pContext->IASetInputLayout(pInputLayout.Get());
 
-	struct Matrix
+	struct ConstantBuffer
 	{
-		float mat[4][4];
+		dx::XMMATRIX transform;
 	};
 
 	float aspect = 3.0f / 4.0f;
 	
-	const Matrix  matTrans =
+	const ConstantBuffer trans
 	{
-		aspect* std::cos(angle),  std::sin(angle), 0.0f, 0.0f,
-	    aspect*-std::sin(angle),  std::cos(angle), 0.0f, 0.0f,
-		0.0f,                     0.0f,            1.0f, 0.0f,
-		0.0f,                     0.0f,            0.0f, 1.0f,
+		{dx::XMMatrixMultiply(
+			dx::XMMatrixRotationZ(angle),
+			dx::XMMatrixScaling(aspect, 1.0f, 1.0f))
+		}
 	};
+
 	wrl::ComPtr<ID3D11Buffer> pConstantBuffer;
 	D3D11_BUFFER_DESC cbd = {};
 	cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	cbd.Usage = D3D11_USAGE_DYNAMIC;
-	cbd.ByteWidth = sizeof(matTrans);
+	cbd.ByteWidth = sizeof(trans);
 	cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	cbd.MiscFlags = 0u;
 	cbd.StructureByteStride = 0u;
 
 	D3D11_SUBRESOURCE_DATA csd = {};
-	csd.pSysMem = &matTrans;
+	csd.pSysMem = &trans;
 
 	GFX_THROW_INFO(pDevice->CreateBuffer(&cbd, &csd, &pConstantBuffer));
 

@@ -23,7 +23,8 @@ hInst(GetModuleHandle(NULL))
 	wc.hbrBackground = nullptr;
 	wc.lpszClassName = GetName();
 	wc.hIconSm = reinterpret_cast<HICON>(LoadImage(GetInstance(), MAKEINTRESOURCE(IDI_ICON1), IMAGE_ICON, 32, 32, 0));
-	
+	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+
 	if (!RegisterClassEx(&wc))
 	{
 		WINDOW_LAST_EXCEPT();
