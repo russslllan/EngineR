@@ -64,6 +64,46 @@ Graphics::Graphics(HWND hWnd)
 		pBackBuffer.Get(),
 		0,
 		&pTarget));
+
+
+	D3D11_DEPTH_STENCIL_DESC dsd = {};
+	dsd.DepthEnable = TRUE;
+	dsd.StencilEnable = FALSE;
+	dsd.DepthFunc = D3D11_COMPARISON_LESS;
+	dsd.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+
+	wrl::ComPtr<ID3D11DepthStencilState> pDSState;
+
+	GFX_THROW_INFO(pDevice->CreateDepthStencilState(&dsd, &pDSState));
+
+	pContext->OMSetDepthStencilState(pDSState.Get(), 1u);
+
+
+	D3D11_TEXTURE2D_DESC descDepth = {};
+	descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	descDepth.Format = DXGI_FORMAT_D32_FLOAT;
+	descDepth.Width = 800;
+	descDepth.Height = 600;
+	descDepth.Usage = D3D11_USAGE_DEFAULT;
+	descDepth.SampleDesc.Count = 1u;
+	descDepth.SampleDesc.Quality = 0u;
+	descDepth.MipLevels = 1u;
+	descDepth.ArraySize = 1u;
+	descDepth.CPUAccessFlags = 0u;
+	descDepth.MiscFlags = 0u;
+
+	wrl::ComPtr<ID3D11Texture2D> pDepthStencil;
+	GFX_THROW_INFO(pDevice->CreateTexture2D(&descDepth, nullptr, &pDepthStencil));
+
+	D3D11_DEPTH_STENCIL_VIEW_DESC dsvd = {};
+	dsvd.Format = DXGI_FORMAT_D32_FLOAT;
+	dsvd.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	dsvd.Texture2D.MipSlice = 0u;
+
+	GFX_THROW_INFO(pDevice->CreateDepthStencilView(pDepthStencil.Get(), &dsvd, &pDSV));
+
+	pContext->OMSetRenderTargets(1u, pTarget.GetAddressOf(), pDSV.Get());
+
 }
 
 
@@ -93,30 +133,32 @@ void Graphics::ClearBuffer(float red, float green, float blue) noexcept
 	pContext->ClearRenderTargetView(
 		pTarget.Get(),
 		color);
+	pContext->ClearDepthStencilView(pDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0.0f);
 }
 
-void Graphics::DrawTestTriangle(float angle)
+void Graphics::DrawTestTriangle(float angle, float x, float y)
 {
 	HRESULT hr;
 
 	struct Vertex
 	{
-		float x;
-		float y;
-		unsigned char  r;
-		unsigned char  g;
-		unsigned char  b;
-		unsigned char  a;
+		struct {
+			float x;
+			float y;
+			float z;
+		} pos;
 	};
 
 	const Vertex vertices[] =
 	{
-		{ 0.0f,  0.5f,  255, 0,   0,   0},
-		{ 0.5f, -0.5f , 0,   255, 0,   0},
-		{-0.5f, -0.5f , 0,   0,   255, 0},
-		{-0.3f,  0.3f,  0,   255, 0,   0},
-		{ 0.3f,  0.3f,  0,   0,   255, 0},
-		{ 0.0f, -1.0f,  255, 0,   0,   0}
+		{-1.0f, -1.0f,  -1.0f},
+		{ 1.0f, -1.0f , -1.0f},
+		{-1.0f,  1.0f , -1.0f},
+		{ 1.0f,  1.0f,  -1.0f},
+		{-1.0f, -1.0f,   1.0f},
+		{ 1.0f, -1.0f,   1.0f},
+		{-1.0f,  1.0f,   1.0f},
+		{ 1.0f,  1.0f,   1.0f},
 	};
 
 	wrl::ComPtr<ID3D11Buffer> vertexBuffer;
@@ -137,10 +179,12 @@ void Graphics::DrawTestTriangle(float angle)
 
 	const unsigned short indices[] =
 	{
-		0,1,2,
-		0,2,3,
-		0,4,1,
-		2,1,5
+		0,2,1, 2,3,1,
+		1,3,5, 3,7,5,
+		2,6,3, 3,6,7,
+		4,5,7, 4,7,6,
+		0,4,2, 2,4,6,
+		0,1,4, 1,5,4
 	};
 
 	wrl::ComPtr<ID3D11Buffer> pIndexBuffer;
@@ -150,7 +194,7 @@ void Graphics::DrawTestTriangle(float angle)
 	ibd.ByteWidth = sizeof(indices);
 	ibd.CPUAccessFlags = 0u;
 	ibd.MiscFlags = 0u;
-	ibd.StructureByteStride = sizeof(unsigned short);
+	ibd.StructureByteStride = 0u;
 
 	D3D11_SUBRESOURCE_DATA isd = {};
 	isd.pSysMem = indices;
@@ -167,25 +211,30 @@ void Graphics::DrawTestTriangle(float angle)
 	wrl::ComPtr<ID3D11InputLayout> pInputLayout;
 	const D3D11_INPUT_ELEMENT_DESC ied[] =
 	{
-		{"Position", 0, DXGI_FORMAT_R32G32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0},
-		{"Color", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 8u, D3D11_INPUT_PER_VERTEX_DATA},
+		{"Position", 0, DXGI_FORMAT_R32G32B32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0}
 	};
 
 	GFX_THROW_INFO(pDevice->CreateInputLayout(ied, (UINT)std::size(ied), pBlob1->GetBufferPointer(), pBlob1->GetBufferSize(), & pInputLayout));
 	pContext->IASetInputLayout(pInputLayout.Get());
 
-	struct ConstantBuffer
+	struct ConstantBufferVS
 	{
 		dx::XMMATRIX transform;
 	};
 
 	float aspect = 3.0f / 4.0f;
+
+	float normalizedX = x / 400 - 1.0f;
+	float normalizedY = -y / 300.0f + 1.0f;
 	
-	const ConstantBuffer trans
+	const ConstantBufferVS trans
 	{
-		{dx::XMMatrixTranspose(dx::XMMatrixMultiply(
-			dx::XMMatrixRotationZ(angle),
-			dx::XMMatrixScaling(aspect, 1.0f, 1.0f)))
+		{dx::XMMatrixTranspose(
+			dx::XMMatrixRotationY(angle) *
+			dx::XMMatrixRotationX(angle)*
+			/*dx::XMMatrixScaling(aspect, 1.0f, 1.0f) * */
+			dx::XMMatrixTranslation(normalizedX, normalizedY, 4.0f) * 
+			dx::XMMatrixPerspectiveLH(1.0f, aspect, 0.5f, 10.0f))
 		}
 	};
 
@@ -210,7 +259,45 @@ void Graphics::DrawTestTriangle(float angle)
 	GFX_THROW_INFO(pDevice->CreatePixelShader(pBlob2->GetBufferPointer(), pBlob2->GetBufferSize(), nullptr, &pPixelShader));
 	pContext->PSSetShader(pPixelShader.Get(), nullptr, 0u);
 
-	pContext->OMSetRenderTargets(1u, pTarget.GetAddressOf(), nullptr);
+	struct ConstantBufferPS
+	{
+		struct
+		{
+			float r;
+			float g;
+			float b;
+			float a;
+		} face_colors[6];
+	};
+
+	const ConstantBufferPS cbuffer = 
+	{
+		{
+			{1.0f,0.0f,1.0f},
+			{1.0f,0.0f,0.0f},
+			{0.0f,1.0f,0.0f},
+			{0.0f,0.0f,1.0f},
+			{1.0f,1.0f,0.0f},
+			{0.0f,1.0f,1.0f}
+		}
+	};
+
+	D3D11_BUFFER_DESC cbdPS = {};
+	cbdPS.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	cbdPS.Usage = D3D11_USAGE_DYNAMIC;
+	cbdPS.ByteWidth = sizeof(cbuffer);
+	cbdPS.CPUAccessFlags =D3D11_CPU_ACCESS_WRITE;
+	cbdPS.MiscFlags = 0u;
+	cbdPS.StructureByteStride = 0u;
+
+	D3D11_SUBRESOURCE_DATA csdPS = {};
+	csdPS.pSysMem = &cbuffer;
+
+	wrl::ComPtr<ID3D11Buffer> pConstantBufferPS;
+	GFX_THROW_INFO(pDevice->CreateBuffer(&cbdPS, &csdPS, &pConstantBufferPS));
+
+	pContext->PSSetConstantBuffers(0u, 1u, pConstantBufferPS.GetAddressOf());
+
 
 	D3D11_VIEWPORT vp;
 	vp.Width    = 800;
@@ -283,9 +370,9 @@ HRESULT Graphics::HrException::GetErrorCode() const noexcept
 std::string Graphics::HrException::GetErrorString() const noexcept
 {
 	std::wstring wstr = DXGetErrorString(hr);
-	int len = WideCharToMultiByte(CP_ACP, 0, &wstr[0], wstr.length(), 0, 0, 0, 0);
+	int len = WideCharToMultiByte(CP_ACP, 0, &wstr[0], size_t(wstr.length()), 0, 0, 0, 0);
 	std::string str(len, '\0');
-	WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), wstr.length(), &str[0], len, 0, NULL);
+	WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), size_t(wstr.length()), &str[0], len, 0, NULL);
 	return str;
 }
 
@@ -294,9 +381,9 @@ std::string Graphics::HrException::GetErrorDescription() const noexcept
 	std::wstring wstr(512, '\0');
 	DXGetErrorDescription(hr, &wstr[0], 512);
 	size_t lenStr = wcslen(wstr.c_str());
-	int len = WideCharToMultiByte(CP_ACP, 0, &wstr[0], lenStr, 0, 0, 0, 0);
+	int len = WideCharToMultiByte(CP_ACP, 0, &wstr[0], size_t(lenStr), 0, 0, 0, 0);
 	std::string str(len, '\0');
-	WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), wstr.length(), &str[0], len, 0, NULL);
+	WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), size_t(wstr.length()), &str[0], len, 0, NULL);
 	return str;
 }
 
