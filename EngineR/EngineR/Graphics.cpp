@@ -183,9 +183,9 @@ void Graphics::DrawTestTriangle(float angle)
 	
 	const ConstantBuffer trans
 	{
-		{dx::XMMatrixMultiply(
+		{dx::XMMatrixTranspose(dx::XMMatrixMultiply(
 			dx::XMMatrixRotationZ(angle),
-			dx::XMMatrixScaling(aspect, 1.0f, 1.0f))
+			dx::XMMatrixScaling(aspect, 1.0f, 1.0f)))
 		}
 	};
 
