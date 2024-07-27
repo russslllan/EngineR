@@ -1,6 +1,7 @@
 #include "DxgiInfoManager.h"
 #include "Graphics.h"
-#include "Macros.h"
+#include "GraphicsThrowMacros.h"
+#include "WindowThrowMacros.h"
 
 #pragma comment(lib, "dxguid.lib")
 

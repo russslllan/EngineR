@@ -3,9 +3,10 @@
 #include <sstream>
 #include <locale> 
 #include <codecvt>
-#include "Macros.h"
+#include "GraphicsThrowMacros.h"
 #include <d3dcompiler.h>
 #include <DirectXMath.h>
+#include "ConstantBuffer.h"
 
 
 #pragma comment(lib, "d3d11.lib")
@@ -104,6 +105,14 @@ Graphics::Graphics(HWND hWnd)
 
 	pContext->OMSetRenderTargets(1u, pTarget.GetAddressOf(), pDSV.Get());
 
+	D3D11_VIEWPORT vp;
+	vp.Width = 800;
+	vp.Height = 600;
+	vp.MinDepth = 0;
+	vp.MaxDepth = 1;
+	vp.TopLeftX = 0;
+	vp.TopLeftY = 0;
+	pContext->RSSetViewports(1u, &vp);
 }
 
 
@@ -133,7 +142,7 @@ void Graphics::ClearBuffer(float red, float green, float blue) noexcept
 	pContext->ClearRenderTargetView(
 		pTarget.Get(),
 		color);
-	pContext->ClearDepthStencilView(pDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0.0f);
+	pContext->ClearDepthStencilView(pDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 }
 
 void Graphics::DrawTestTriangle(float angle, float x, float y)
@@ -312,6 +321,11 @@ void Graphics::DrawTestTriangle(float angle, float x, float y)
 	GFX_THROW_INFO_ONLY(pContext->DrawIndexed((UINT)std::size(indices), 0u, 0));
 }
 
+void Graphics::DrawIndexed(UINT count) noexcept
+{
+	pContext->DrawIndexed(count, 0u, 0u);
+}
+
 Graphics::HrException::HrException(
 	int line, 
 	const char * file,
@@ -370,9 +384,9 @@ HRESULT Graphics::HrException::GetErrorCode() const noexcept
 std::string Graphics::HrException::GetErrorString() const noexcept
 {
 	std::wstring wstr = DXGetErrorString(hr);
-	int len = WideCharToMultiByte(CP_ACP, 0, &wstr[0], size_t(wstr.length()), 0, 0, 0, 0);
+	int len = WideCharToMultiByte(CP_ACP, 0, &wstr[0], int(wstr.length()), 0, 0, 0, 0);
 	std::string str(len, '\0');
-	WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), size_t(wstr.length()), &str[0], len, 0, NULL);
+	WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), int(wstr.length()), &str[0], len, 0, NULL);
 	return str;
 }
 
@@ -381,9 +395,9 @@ std::string Graphics::HrException::GetErrorDescription() const noexcept
 	std::wstring wstr(512, '\0');
 	DXGetErrorDescription(hr, &wstr[0], 512);
 	size_t lenStr = wcslen(wstr.c_str());
-	int len = WideCharToMultiByte(CP_ACP, 0, &wstr[0], size_t(lenStr), 0, 0, 0, 0);
+	int len = WideCharToMultiByte(CP_ACP, 0, &wstr[0], int(lenStr), 0, 0, 0, 0);
 	std::string str(len, '\0');
-	WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), size_t(wstr.length()), &str[0], len, 0, NULL);
+	WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), int(wstr.length()), &str[0], len, 0, NULL);
 	return str;
 }
 

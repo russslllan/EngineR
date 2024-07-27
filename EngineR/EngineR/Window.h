@@ -6,7 +6,7 @@
 #include "Mouse.h"
 #include "Graphics.h"
 #include <memory>
-#include "Macros.h"
+#include "WindowThrowMacros.h"
 
 class Window
 {

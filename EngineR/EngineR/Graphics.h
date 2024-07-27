@@ -6,10 +6,12 @@
 #include <vector>
 #include "DxgiInfoManager.h"
 #include <wrl.h>
-//#include "Macros.h"
+#include <DirectXMath.h>
 
 class Graphics
 {
+	friend class Bindable;
+
 public:
 	//class Exception : public RusException
 	//{
@@ -64,7 +66,9 @@ public:
 	void EndFrame();
 	void ClearBuffer(float red, float green, float blue) noexcept;
 	void DrawTestTriangle(float angle, float x, float y);
-
+	void DrawIndexed(UINT count) noexcept;
+	void SetProjection(const DirectX::XMMATRIX& mat) noexcept { this->ProjectMatrix = mat; }
+	DirectX::XMMATRIX GetProjection() noexcept { return ProjectMatrix; }
 
 private:
 #ifndef NDEBUG
@@ -75,4 +79,5 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext>    pContext;
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> pTarget;	
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> pDSV;
+	DirectX::XMMATRIX ProjectMatrix;
 };
