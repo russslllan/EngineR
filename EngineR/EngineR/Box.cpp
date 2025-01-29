@@ -68,7 +68,7 @@ Box::Box(Graphics& gfx,
 			0,4,2, 2,4,6,
 			0,1,4, 1,5,4
 		};
-		AddIndexBuffer(std::make_unique<IndexBuffer>(gfx, indices));
+		AddStaticIndexBuffer(std::make_unique<IndexBuffer>(gfx, indices));
 
 		struct ConstantBuffer2
 		{
@@ -101,6 +101,10 @@ Box::Box(Graphics& gfx,
 		AddStaticBind(std::make_unique<InputLayout>(gfx, iec, pvsbc));
 
 		AddStaticBind(std::make_unique<Topology>(gfx, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
+	}
+	else
+	{
+		SetIndexFromStaticBuffer();
 	}
 
 

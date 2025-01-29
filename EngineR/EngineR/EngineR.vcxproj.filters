@@ -93,6 +93,9 @@
     <ClInclude Include="PixelShader.h">
       <Filter>Bindable</Filter>
     </ClInclude>
+    <ClInclude Include="DrawableBase.h">
+      <Filter>Bindable</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="RusException.cpp">
